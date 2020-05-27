@@ -1,25 +1,34 @@
 #include "LCD_ka.h"
 
-
 //**** Define as portas que o LCD lê: ****
-DigitalOut RS(D8);           
-DigitalOut E(D9);
-BusOut dados(D4, D5, D6, D7);
+LCD::LCD(PinName rs, PinName e, PinName d4, PinName d5, PinName d6, PinName d7) : RS(rs), E(e), dados(d4,d5,d6,d7){
+    Inicia_LCD();
+}
 
-//**** Variáveis que o código utiliza para funções internas: ****
+
 int _coluna = 1;
 int _linha = 1;
 
+string LCD::Lepos(void){
+    string buffer;
+    char li[6];
+    sprintf(li,"(%d,%d)", _linha, _coluna);
+    buffer.append(li);
+    return buffer;
+    
+}
+
 //**** Comando que indica para o LCD que metade dos bits foram enviados: ****
-void bate_enable(void){
+void LCD::bate_enable(void){
     E = 1;
     wait(0.000040f);
     E=0;
     wait(0.000040f);
 }
 
+
 //**** Função de inicialização do LCD: ****
-void Inicia_LCD(void){
+void LCD::Inicia_LCD(void){
     RS = 0;
     E = 0;
     dados = 0x0;
@@ -73,29 +82,10 @@ void Inicia_LCD(void){
         clc(); 
 }
 
-//**** Função que recebe string e escreve no display: ****
-void disp(char* value){
-    for (int i = 0; value[i] != '\0';++i)
-    {
-        if (_coluna == 17)
-        {
-            RS = 0;
-            fim_de_curso();
-        }
-        RS = 1;
-        char txt = value[i];
-        dados = txt>>4;
-        bate_enable();
-        dados = txt;
-        bate_enable();
-        
-        _coluna = _coluna + 1;
-    }
-    RS = 0;
-}
+
 
 //**** Função que limpa o display e volta o cursor para (1,1): ****
-void clc(void){
+void LCD::clc(void){
     wait(0.02);
     
     dados = 0x0;
@@ -109,8 +99,9 @@ void clc(void){
     _linha = 1;
 }
 
+
 //**** Função que volta o cursor para (1,1): ****
-void home(void){
+void LCD::home(void){
     wait(0.002);
     
     dados = 0x0;
@@ -124,8 +115,9 @@ void home(void){
     _linha = 1;
 }
 
+
 //**** Função que manda o cursor para a direita: ****
-void direita(void){
+void LCD::direita(void){
     wait(0.0002);
     
     dados = 0x1;
@@ -140,8 +132,9 @@ void direita(void){
     fim_de_curso(); 
 }
 
+
 //**** Função quem manda o cursor para a esquerda: ****
-void esquerda(void){
+void LCD::esquerda(void){
     wait(0.0002);
     
     dados = 0x1;
@@ -156,8 +149,9 @@ void esquerda(void){
     fim_de_curso();
 }
 
+
 //**** Função que apaga o que está no cursor: ****
-void apaga(void){
+void LCD::apaga(void){
     RS = 1;
     
     wait(0.002);
@@ -172,50 +166,39 @@ void apaga(void){
     pos(_linha,_coluna);
 }
 
+
 //**** Função que manda o display para linha de cima: ****
-void cima(void){
+void LCD::cima(void){
     pos(1,_coluna);
 
     _linha = 1;
 }
 
+
 //**** Função que manda o display para linha de baixo: ****
-void baixo(void){
+void LCD::baixo(void){
     pos(2,_coluna);
     
     _linha = 2;
 }
 
+
 //**** Função que posiciona o cursor na linha e coluna inseridas: ****
-void pos(int li, int co){
-    home();                      //   Primeiro o cursor volta para (0,0)
-    wait(0.002);
+void LCD::pos(int li, int co){
+    int POSI = 0x80 + ((li-1) * 0x40) + (co-1);
     
-    if (li == 1)                 //   Se o usuário inseriu a linha 1
-    {                            //esse comando faz o cursor andar
-        for(int i = 1; i < co; i++)  //para a direita até a posição declarada
-        { 
-            direita();           
-        }
-    }
+    dados = POSI>>4;
+    bate_enable();
+    dados = POSI;
+    bate_enable();
     
-    if (li == 2)                 //   Se o usuário inseriu a linha 2
-    {                            //Primeiro temos que mandar o cursor
-        dados = 0xC;             //para a linha dois e depois andar
-        bate_enable();           //para a direita até a posição declarada
-        dados = 0x0;
-        bate_enable();
-        for(int i = 1; i < co; i++)
-        {
-            direita();
-        }
-    }
     _coluna = co;
     _linha = li;
 }   
 
+
 //**** Função que define se o cursor saiu do display: ****
-void fim_de_curso (void){
+void LCD::fim_de_curso (void){
     switch (_coluna)
     {
         case 17 : 
@@ -234,5 +217,27 @@ void fim_de_curso (void){
 }
     
     
+ 
+ 
+ 
+int LCD::_putc(int value) {
+    if (value == '\n') {
+        baixo();
+    }else{
+        RS = 1;
+        dados = value>>4;
+        bate_enable();
+        dados = value;
+        bate_enable();
+        RS = 0;
+    }
+    _chars[_linha-1][_coluna-1] = value;
+    _coluna++;
+    fim_de_curso();
     
-    
+    return value;
+}
+
+int LCD::_getc() {
+    return -1;
+}
