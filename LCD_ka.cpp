@@ -36,8 +36,10 @@ void LCD::Inicia_LCD(void){
     wait(0.05);
     for (int i=0; i<3; i++){
         // Define como 4 bits
-        dados = 0x2;
-        bate_enable(); 
+       dados = 0x2;
+       bate_enable(); 
+       
+       wait(0.01);
         
         // Define 0 0 1 DL - N F _ _ 
         //(DL = Data Lengh: 0 --> 4 Bits
