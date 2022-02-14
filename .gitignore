@@ -4,3 +4,7 @@ mbed
 ?mbed
 compile_commands?json
 ?clangd
+.mbed
+compile_commands.json
+.clangd
+.cache
